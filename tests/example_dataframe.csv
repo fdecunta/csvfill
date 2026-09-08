@@ -1,0 +1,17 @@
+id,endophyte,sim_herb,d_abderus,aboveground_biomass
+1,E+,control,H+,3.56
+2,E+,control,H-,4.7
+3,E+,below,H+,NA
+4,E+,below,H-,NA
+5,E+,above,H+,NA
+6,E+,above,H-,NA
+7,E+,both,H+,NA
+8,E+,both,H-,NA
+9,E-,control,H+,3.65
+10,E-,control,H-,NA
+11,E-,below,H+,2.65
+12,E-,below,H-,NA
+13,E-,above,H+,0.65
+14,E-,above,H-,NA
+15,E-,both,H+,NA
+16,E-,both,H-,6.87
