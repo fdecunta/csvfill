@@ -4,12 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/* Code to read:
- * join.c
- * awk, lib.c, function readcsvrec
- */
-// TODO: remove \r in case it appears. Look at lib.c from awk.
-
 struct record {
 	char 	**line;
 	int 	  ncol;
