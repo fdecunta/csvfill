@@ -16,7 +16,7 @@ struct record {
 };
 
 struct table {
-	char 		**names;
+	struct record 	 *names;
 	struct record 	**records;
 	size_t 		  nrecords;
 };
@@ -24,8 +24,8 @@ struct table {
 int 	readcsv(FILE *, struct table *);
 void 	usage(void);
 void 	free_table(struct table *);
-long	readnum(char *s);
-
+void 	free_record(struct record *);
+long	readnum(char *);
 
 char delim;
 long c1, c2; 	/* column with ids from file 1 and 2 */
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
-	/* row 1 is names */
+	printf("%s\n", tbl1.names->line[c1]);
 	for (size_t i=1; i < tbl1.nrecords; i++) {
 		struct record *r = tbl1.records[i];
 		printf("%s\n", r->line[c1]);
@@ -93,6 +93,8 @@ main(int argc, char *argv[])
 	}
 	puts("");
 
+
+	printf("%s\n", tbl2.names->line[c2]);
 	for (size_t i=1; i < tbl2.nrecords; i++) {
 		struct record *r = tbl2.records[i];
 		printf("%s\n", r->line[c2]);
@@ -128,6 +130,8 @@ int
 readcsv(FILE *fp, struct table *tbl)
 {
 	// TODO: handle comma inside quotes?
+
+	int first_line = 1;
 	char *line = NULL;
 	size_t linesz = 0;
 	ssize_t linelen;
@@ -174,6 +178,11 @@ readcsv(FILE *fp, struct table *tbl)
 			if ((ep = strchr(sp, delim)) == NULL)
 				ep = strchr(sp, '\0');
 		}
+		if (first_line) {
+			tbl->names = rec;
+			first_line = 0;
+			continue;
+		} 
 		tbl->records = realloc(tbl->records, (size_t)(1 + tbl->nrecords) * sizeof(struct record *));
 		tbl->records[tbl->nrecords++] = rec;
 	}
@@ -185,16 +194,20 @@ readcsv(FILE *fp, struct table *tbl)
 void
 free_table(struct table *tbl)
 {
-	struct record *r;
+	free_record(tbl->names);
 	for (size_t i = 0; i < tbl->nrecords; i++) {
-		r = tbl->records[i];
-		for (int j = 0; j < r->ncol; j++) {
-			free(r->line[j]);
-		}
-		free(r->line);
-		free(r);
+		free_record(tbl->records[i]);
 	}
 	free(tbl->records);
+}
+
+void
+free_record(struct record *r)
+{
+	for (int i = 0; i < r->ncol; i++) 
+		free(r->line[i]);
+	free(r->line);
+	free(r);
 }
 
 void
