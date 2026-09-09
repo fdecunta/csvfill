@@ -36,9 +36,9 @@ struct table tbl2 = { NULL, NULL, 0 };
 int
 main(int argc, char *argv[])
 {
-
+	FILE *fp1, *fp2;
 	delim = ',';
-	c1 = c2 = 1;
+	c1 = c2 = 0;
 
 	int ch;
 	while ((ch = getopt(argc, argv, "1:2:d:h")) != -1) {
@@ -61,23 +61,27 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 1) {
-		fprintf(stderr, "missing args\n");
+	if (argc == 0) {
+		fprintf(stderr, "error: missing args\n");
 		usage();
 		exit(EXIT_FAILURE);
-	}
+	} 
 
-	FILE *fp;
-	if ((fp = fopen(*argv, "r")) == NULL) {
+	if ((fp1 = fopen(*argv, "r")) == NULL) {
 		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
+	
+	fp2 = argc == 1 ? stdin : (fopen(*(++argv), "r"));
+	if (fp2 == NULL) {
+		perror("fopen fp2");
+		exit(EXIT_FAILURE);
+	}
 
-	readcsv(fp, &tbl1);
-	fclose(fp);
-
-	readcsv(stdin, &tbl2);
-
+	readcsv(fp1, &tbl1);
+	readcsv(fp2, &tbl2);
+	fclose(fp1);
+	fclose(fp2);
 
 	/* row 1 is names */
 	for (size_t i=1; i < tbl1.nrecords; i++) {
@@ -87,7 +91,6 @@ main(int argc, char *argv[])
 //			printf("%s\t", r->line[j]);
 //		puts("");
 	}
-
 	puts("");
 
 	for (size_t i=1; i < tbl2.nrecords; i++) {
