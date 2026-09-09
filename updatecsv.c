@@ -54,6 +54,7 @@ main(int argc, char *argv[])
 				fprintf(stderr, "error: illegal field number -- %s\n", optarg);
 				exit(EXIT_FAILURE);
 			}
+			--c1;
 			break;
 		case '2':
 			if ((c2 = strtol(optarg, &end, 10)) < 1) {
@@ -64,6 +65,7 @@ main(int argc, char *argv[])
 				fprintf(stderr, "error: illegal field number -- %s\n", optarg);
 				exit(EXIT_FAILURE);
 			}
+			--c2;
 			break;
 		case 'd':
 			delim = optarg[0];
@@ -95,21 +97,23 @@ main(int argc, char *argv[])
 	readcsv(stdin, &tbl2);
 
 
-	for (size_t i=0; i < tbl1.nrecords; i++) {
+	/* row 1 is names */
+	for (size_t i=1; i < tbl1.nrecords; i++) {
 		struct record *r = tbl1.records[i];
-
-		for (int j=0; j < r->ncol; j++)
-			printf("%s\t", r->line[j]);
-		puts("");
+		printf("%s\n", r->line[c1]);
+//		for (int j=0; j < r->ncol; j++)
+//			printf("%s\t", r->line[j]);
+//		puts("");
 	}
 
+	puts("");
 
-	for (size_t i=0; i < tbl2.nrecords; i++) {
+	for (size_t i=1; i < tbl2.nrecords; i++) {
 		struct record *r = tbl2.records[i];
-
-		for (int j=0; j < r->ncol; j++)
-			printf("%s\t", r->line[j]);
-		puts("");
+		printf("%s\n", r->line[c2]);
+//		for (int j=0; j < r->ncol; j++)
+//			printf("%s\t", r->line[j]);
+//		puts("");
 	}
 
 	free_table(&tbl1);
@@ -122,7 +126,6 @@ int
 readcsv(FILE *fp, struct table *tbl)
 {
 	// TODO: handle comma inside quotes?
-	// TODO: empty cells?
 
 	char *line = NULL;
 	size_t linesz = 0;
