@@ -10,7 +10,6 @@
  */
 // TODO: remove \r in case it appears. Look at lib.c from awk.
 
-
 struct record {
 	char 	**line;
 	int 	  ncol;
@@ -24,8 +23,9 @@ struct table {
 
 int 	readcsv(FILE *, struct table *);
 void 	usage(void);
-
 void 	free_table(struct table *);
+long	readnum(char *s);
+
 
 char delim;
 long c1, c2; 	/* column with ids from file 1 and 2 */
@@ -33,11 +33,9 @@ long c1, c2; 	/* column with ids from file 1 and 2 */
 struct table tbl1 = { NULL, NULL, 0 };
 struct table tbl2 = { NULL, NULL, 0 };
 
-
 int
 main(int argc, char *argv[])
 {
-	char *end;
 
 	delim = ',';
 	c1 = c2 = 1;
@@ -46,26 +44,10 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "1:2:d:h")) != -1) {
 		switch (ch) {
 		case '1':
-			if ((c1 = strtol(optarg, &end, 10)) < 1) {
-				fprintf(stderr, "error: -1 option is less than 1\n");
-				exit(EXIT_FAILURE);
-			}
-			if (*end) {
-				fprintf(stderr, "error: illegal field number -- %s\n", optarg);
-				exit(EXIT_FAILURE);
-			}
-			--c1;
+			c1 = readnum(optarg);
 			break;
 		case '2':
-			if ((c2 = strtol(optarg, &end, 10)) < 1) {
-				fprintf(stderr, "error: -1 option is less than 1\n");
-				exit(EXIT_FAILURE);
-			}
-			if (*end) {
-				fprintf(stderr, "error: illegal field number -- %s\n", optarg);
-				exit(EXIT_FAILURE);
-			}
-			--c2;
+			c2 = readnum(optarg);
 			break;
 		case 'd':
 			delim = optarg[0];
@@ -122,11 +104,27 @@ main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
+long
+readnum(char *s)
+{
+	long num;
+	char *end;
+
+	if ((num = strtol(s, &end, 10)) < 1) {
+		fprintf(stderr, "error: option is less than 1 --%s\n", s);
+		exit(EXIT_FAILURE);
+	}
+	if (*end) {
+		fprintf(stderr, "error: illegal field number -- %s\n", s);
+		exit(EXIT_FAILURE);
+	}
+	return --num;
+}
+
 int
 readcsv(FILE *fp, struct table *tbl)
 {
 	// TODO: handle comma inside quotes?
-
 	char *line = NULL;
 	size_t linesz = 0;
 	ssize_t linelen;
@@ -173,7 +171,6 @@ readcsv(FILE *fp, struct table *tbl)
 			if ((ep = strchr(sp, delim)) == NULL)
 				ep = strchr(sp, '\0');
 		}
-
 		tbl->records = realloc(tbl->records, (size_t)(1 + tbl->nrecords) * sizeof(struct record *));
 		tbl->records[tbl->nrecords++] = rec;
 	}
