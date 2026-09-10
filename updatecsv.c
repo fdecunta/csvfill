@@ -77,25 +77,15 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
-	printf("%s\n", tbl1.names->line[c1]);
-	for (size_t i=1; i < tbl1.nrecords; i++) {
-		struct record *r = tbl1.records[i];
-		printf("%s\n", r->line[c1]);
-//		for (int j=0; j < r->ncol; j++)
-//			printf("%s\t", r->line[j]);
-//		puts("");
+	for (size_t i = 0; i < tbl1.nrecords; i++) {
+		if (!strcmp(tbl1.records[i]->line[c1], "2")) {
+			for (int j=0; j < tbl1.records[i]->ncol; j++) {
+				printf("%s ", tbl1.records[i]->line[j]);
+			}
+			puts("");
+		}
 	}
-	puts("");
-
-
-	printf("%s\n", tbl2.names->line[c2]);
-	for (size_t i=1; i < tbl2.nrecords; i++) {
-		struct record *r = tbl2.records[i];
-		printf("%s\n", r->line[c2]);
-//		for (int j=0; j < r->ncol; j++)
-//			printf("%s\t", r->line[j]);
-//		puts("");
-	}
+	
 
 	free_table(&tbl1);
 	free_table(&tbl2);
