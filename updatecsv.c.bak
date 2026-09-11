@@ -5,33 +5,27 @@
 #include <unistd.h>
 
 struct record {
-	char 	 *id;
 	char 	**fields;
 	int 	  nfields;
 };
 
 struct table {
-	char 		 *filename;
-	long 		  idfield;
 	struct record 	 *names;
 	struct record 	**records;
 	size_t 		  nrecords;
 };
 
-int	 	 readcsv(FILE *, struct table *);
-void	 	 usage(void);
-void	 	 free_table(struct table *);
-void	 	 free_record(struct record *);
-long		 readnum(char *);
-struct record 	*find_record(const struct table *,  char *);
-int 		 assert_uniq_ids(const struct table *);
-int 		 assert_no_new_ids(const struct table *, const struct table *);
+int 	readcsv(FILE *, struct table *);
+void 	usage(void);
+void 	free_table(struct table *);
+void 	free_record(struct record *);
+long	readnum(char *);
 
 char delim;
 long c1, c2; 	/* column with ids from file 1 and 2 */
 
-struct table tbl1 = { NULL, 0, NULL, NULL, 0 };
-struct table tbl2 = { NULL, 0, NULL, NULL, 0 };
+struct table tbl1 = { NULL, NULL, 0 };
+struct table tbl2 = { NULL, NULL, 0 };
 
 int
 main(int argc, char *argv[])
@@ -44,10 +38,10 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "1:2:d:h")) != -1) {
 		switch (ch) {
 		case '1':
-			tbl1.idfield = readnum(optarg);
+			c1 = readnum(optarg);
 			break;
 		case '2':
-			tbl2.idfield = readnum(optarg);
+			c2 = readnum(optarg);
 			break;
 		case 'd':
 			delim = optarg[0];
@@ -71,33 +65,26 @@ main(int argc, char *argv[])
 		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
-	tbl1.filename = strdup(*argv);
 	
 	fp2 = argc == 1 ? stdin : (fopen(*(++argv), "r"));
 	if (fp2 == NULL) {
 		perror("fopen fp2");
 		exit(EXIT_FAILURE);
 	}
-	tbl2.filename = strdup(argc == 1 ? "stdin" : *argv);
 
 	readcsv(fp1, &tbl1);
 	readcsv(fp2, &tbl2);
 	fclose(fp1);
 	fclose(fp2);
 
-	// TODO: check all rows have the same fields
-	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
-		assert_no_new_ids(&tbl1, &tbl2) != 0) {
-		free_table(&tbl1);
-		free_table(&tbl2);
-		exit(EXIT_FAILURE);
+	for (size_t i = 0; i < tbl1.nrecords; i++) {
+		if (!strcmp(tbl1.records[i]->fields[c1], "2")) {
+			for (int j=0; j < tbl1.records[i]->nfields; j++) {
+				printf("%s ", tbl1.records[i]->fields[j]);
+			}
+			puts("");
+		}
 	}
-
-	struct record *r = find_record(&tbl1, "1");
-
-	for (int i = 0; i < r->nfields; i++)
-		printf("%s    ", r->fields[i]);
-	puts("");
 	
 	free_table(&tbl1);
 	free_table(&tbl2);
@@ -200,7 +187,6 @@ free_table(struct table *tbl)
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		free_record(tbl->records[i]);
 	}
-	free(tbl->filename);
 	free(tbl->records);
 }
 
@@ -213,68 +199,6 @@ free_record(struct record *r)
 	free(r);
 }
 
-struct record *
-find_record(const struct table *tbl,  char *s)
-{
-	size_t i;
-	long id;
-	struct record *r;
-
-	id = tbl->idfield;
-	for (i = 0; i < tbl->nrecords; i++) {
-		r = tbl->records[i];
-		if (!strcmp(r->fields[id], s))
-			return r;
-	}
-	return NULL;
-}
-
-int
-assert_uniq_ids(const struct table *tbl)
-{
-	int errs = 0;
-	size_t i, j;
-	long id;
-	char *tmp_id;
-
-	id = tbl->idfield;
-	for (i = 0; i < tbl->nrecords; i++) {
-		tmp_id = tbl->records[i]->fields[id];
-		for (j = 0; j < tbl->nrecords; j++) {
-			if (!strcmp(tmp_id, tbl->records[j]->fields[id]) && i != j) {
-				fprintf(stderr, "%stdin: id %s is not unique\n", tbl->filename, tmp_id);
-				errs += 1;
-			}
-		}
-	}
-	return errs;
-}
-
-int 
-assert_no_new_ids(const struct table *tbl1, const struct table *tbl2)
-{
-	/* 
-	 * iterate over all ids from table 2 and make sure that
-	 * all of them are present in table 1 
-	 */
-	int errors = 0;
-	size_t i;
-	long id;
-	struct record *r;
-
-	id = tbl1->idfield;
-
-	for (i = 0; i < tbl2->nrecords; i++) {
-		r = tbl2->records[i];
-		if ((find_record(tbl1, r->fields[id])) == NULL) {
-			fprintf(stderr, "%s: id %s not found in %s\n", 
-				tbl2->filename, r->fields[id], tbl1->filename);
-			errors += 1;
-		}
-	}
-	return errors;
-}
-
 void
 usage(void)
 {
@@ -284,5 +208,3 @@ usage(void)
 	fprintf(stderr, " -1  number of column with ID in FILE1. Default is 1\n");
 	fprintf(stderr, " -2  number of column with ID in FILE2. Default is 1\n");
 }
-
-
