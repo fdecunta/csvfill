@@ -29,9 +29,7 @@ int 		 assert_no_new_ids(const struct table *, const struct table *);
 void 		 find_changes(struct table *, struct table *);
 int 		 column_index(struct table *, char *);
 void 		 write_table(struct table *);
-
 int		 assert_columns_exist(struct table *, struct table *);
-
 
 char delim;
 
@@ -392,16 +390,23 @@ int
 assert_columns_exist(struct table *tbl1, struct table *tbl2)
 {
 	int ret = 0;
+	int found; 
 	char *fname1, *fname2;
 	for (int i = 0; i < tbl2->names->nfields; i++) {
-		fname1 = tbl2->names->fields[i];
-		for (int j = 0; i < tbl1->names->nfields; j++) {
-			fname2 = tbl1->names->fields[j];
-			if (!strcmp(fname1, fname2))
+		found = 0; 
+		fname2 = tbl2->names->fields[i];
+		for (int j = 0; j < tbl1->names->nfields; j++) {
+			fname1 = tbl1->names->fields[j];
+			if (!strcmp(fname1, fname2)) {
+				found = 1;
 				break;
+			}
 		}
-		ret -= 1;
-		fprintf(stderr, "col not found\n");
+
+		if (!found) {
+			ret -= 1;
+			fprintf(stderr, "col not found: %s\n", fname2);
+		}
 	}
 	return ret;
 }
