@@ -96,8 +96,6 @@ main(int argc, char *argv[])
 	fclose(fp2);
 
 	// TODO: check all rows have the same number of fields
-	// TODO: check all columns from table 2 exist in table 1
-	// TODO: add flag if want to add a new column. error if not
 	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
 		assert_no_new_ids(&tbl1, &tbl2) != 0) {
 		free_table(&tbl1);
@@ -105,6 +103,7 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	// TODO: add flag if want to add a new column. error if not
 	if (assert_columns_exist(&tbl1, &tbl2) != 0) {
 		free_table(&tbl1);
 		free_table(&tbl2);
