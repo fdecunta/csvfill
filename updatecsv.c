@@ -30,6 +30,9 @@ void 		 find_changes(struct table *, struct table *);
 int 		 column_index(struct table *, char *);
 void 		 write_table(struct table *);
 
+int		 assert_columns_exist(struct table *, struct table *);
+
+
 char delim;
 
 struct table tbl1 = { NULL, 0, NULL, NULL, 0 };
@@ -81,8 +84,16 @@ main(int argc, char *argv[])
 	}
 	tbl2.filename = strdup(argc == 1 ? "stdin" : *argv);
 
-	readcsv(fp1, &tbl1);
-	readcsv(fp2, &tbl2);
+	if (readcsv(fp1, &tbl1) < 1) {
+		fclose(fp1);
+		free_table(&tbl1);
+		exit(EXIT_FAILURE);
+	}
+	if (readcsv(fp2, &tbl2) < 1) {
+		fclose(fp2);
+		free_table(&tbl2);
+		exit(EXIT_FAILURE);
+	}
 	fclose(fp1);
 	fclose(fp2);
 
@@ -91,6 +102,12 @@ main(int argc, char *argv[])
 	// TODO: add flag if want to add a new column. error if not
 	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
 		assert_no_new_ids(&tbl1, &tbl2) != 0) {
+		free_table(&tbl1);
+		free_table(&tbl2);
+		exit(EXIT_FAILURE);
+	}
+
+	if (assert_columns_exist(&tbl1, &tbl2) != 0) {
 		free_table(&tbl1);
 		free_table(&tbl2);
 		exit(EXIT_FAILURE);
@@ -192,9 +209,19 @@ readcsv(FILE *fp, struct table *tbl)
 		tbl->records = realloc(tbl->records, (size_t)(1 + tbl->nrecords) * sizeof(struct record *));
 		tbl->records[tbl->nrecords++] = rec;
 	}
-
 	free(line);
-	return 0;
+
+	/* haven't read column names */
+	if (first_line) {
+		fprintf(stderr, "%s: missing column names\n", tbl->filename);
+		return -1;
+	} 
+	if (!tbl->nrecords) {
+		fprintf(stderr, "%s: no rows to read\n", tbl->filename);
+		return -1;
+	}
+
+	return (int)tbl->nrecords;
 }
 
 void
@@ -244,9 +271,9 @@ assert_uniq_ids(const struct table *tbl)
 	id = tbl->idfield;
 	for (i = 0; i < tbl->nrecords; i++) {
 		tmp_id = tbl->records[i]->fields[id];
-		for (j = 0; j < tbl->nrecords; j++) {
+		for (j = i + 1; j < tbl->nrecords; j++) {
 			if (!strcmp(tmp_id, tbl->records[j]->fields[id]) && i != j) {
-				fprintf(stderr, "%stdin: id %s is not unique\n", tbl->filename, tmp_id);
+				fprintf(stderr, "%s: id %s is not unique\n", tbl->filename, tmp_id);
 				errs += 1;
 			}
 		}
@@ -320,7 +347,8 @@ find_changes(struct table *tbl1, struct table *tbl2)
 
 			// TODO: handle error if not empty
 			if (!strcmp(f1, "") || !strcmp(f1, "NA") || !strcmp(f1, "NaN")) {
-				r1->fields[col1] = r2->fields[col2];
+				free(r1->fields[col1]);
+				r1->fields[col1] = strdup(r2->fields[col2]);
 			}
 		}
 	}
@@ -358,6 +386,24 @@ write_table(struct table *tbl)
 			putchar(c);
 		}
 	}
+}
+
+int
+assert_columns_exist(struct table *tbl1, struct table *tbl2)
+{
+	int ret = 0;
+	char *fname1, *fname2;
+	for (int i = 0; i < tbl2->names->nfields; i++) {
+		fname1 = tbl2->names->fields[i];
+		for (int j = 0; i < tbl1->names->nfields; j++) {
+			fname2 = tbl1->names->fields[j];
+			if (!strcmp(fname1, fname2))
+				break;
+		}
+		ret -= 1;
+		fprintf(stderr, "col not found\n");
+	}
+	return ret;
 }
 
 void
