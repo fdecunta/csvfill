@@ -26,9 +26,11 @@ long		 readnum(char *);
 struct record 	*find_record(const struct table *,  char *);
 int 		 assert_uniq_ids(const struct table *);
 int 		 assert_no_new_ids(const struct table *, const struct table *);
+void 		 find_changes(struct table *, struct table *);
+int 		 column_index(struct table *, char *);
+void 		 write_table(struct table *);
 
 char delim;
-long c1, c2; 	/* column with ids from file 1 and 2 */
 
 struct table tbl1 = { NULL, 0, NULL, NULL, 0 };
 struct table tbl2 = { NULL, 0, NULL, NULL, 0 };
@@ -38,7 +40,6 @@ main(int argc, char *argv[])
 {
 	FILE *fp1, *fp2;
 	delim = ',';
-	c1 = c2 = 0;
 
 	int ch;
 	while ((ch = getopt(argc, argv, "1:2:d:h")) != -1) {
@@ -85,7 +86,9 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
-	// TODO: check all rows have the same fields
+	// TODO: check all rows have the same number of fields
+	// TODO: check all columns from table 2 exist in table 1
+	// TODO: add flag if want to add a new column. error if not
 	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
 		assert_no_new_ids(&tbl1, &tbl2) != 0) {
 		free_table(&tbl1);
@@ -93,12 +96,13 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	struct record *r = find_record(&tbl1, "1");
+	// create changes_stack
+	// apply changes from stack if not empty
 
-	for (int i = 0; i < r->nfields; i++)
-		printf("%s    ", r->fields[i]);
-	puts("");
-	
+	find_changes(&tbl1, &tbl2);
+
+	write_table(&tbl1);
+
 	free_table(&tbl1);
 	free_table(&tbl2);
 
@@ -276,6 +280,87 @@ assert_no_new_ids(const struct table *tbl1, const struct table *tbl2)
 }
 
 void
+find_changes(struct table *tbl1, struct table *tbl2)
+{
+	/*
+	 *  Find modifications that need to be applied to table 1
+	 */
+	size_t i;
+	char *tmp_id;
+	struct record *r1, *r2;		/* record input (from table 2), record target (tbl 1) */
+	int col1, col2; 		/* column index for records 1 and 2 */
+	char *f1; 			/* pointer to field for records 1 */
+
+	/* 
+	 *  Iterate over records from table 2 (input table).
+	 *  For each one retrieve the record from table 1 (target table).
+	 *  Then iterate over each column from r_input (rec from table 2), find the 
+	 *  corresponding value in r_target (record from table 1).
+	 */
+	for (i = 0; i < tbl2->nrecords; i++) {
+		r2 = tbl2->records[i];
+		tmp_id = r2->fields[tbl2->idfield];
+
+		r1 = find_record(tbl1, tmp_id);
+		if (r1 == NULL) {
+			fprintf(stderr, "error: can't find id %s\n", tmp_id);
+			return;
+		}
+
+		/* iterate over columns from table 2 and get values
+		 * from each field in record
+		 */
+		for (col2 = 0; col2 < tbl2->names->nfields; col2++) {
+			if (col2 == tbl2->idfield)
+				continue;
+
+			// TODO: check not -1. although this must be assert in main 
+			col1 = column_index(tbl1, tbl2->names->fields[col2]);
+			f1 = r1->fields[col1];
+
+			// TODO: handle error if not empty
+			if (!strcmp(f1, "") || !strcmp(f1, "NA") || !strcmp(f1, "NaN")) {
+				r1->fields[col1] = r2->fields[col2];
+			}
+		}
+	}
+}
+
+int
+column_index(struct table *tbl, char *s)
+{
+	for (int i = 0; i < tbl->names->nfields; i++) {
+		if (!strcmp(tbl->names->fields[i], s)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+void
+write_table(struct table *tbl)
+{
+	struct record *r;
+	char c;
+
+	for (int i = 0; i < tbl->names->nfields; i++) {
+		printf("%s", tbl->names->fields[i]);
+		c = (i != tbl->names->nfields - 1) ? delim : '\n';
+		putchar(c);
+	}
+
+	for (size_t i = 0; i < tbl->nrecords; i++) {
+		r = tbl->records[i];
+		for (int j = 0; j < tbl->names->nfields; j++) {
+			printf("%s", r->fields[j]);
+
+			c = (j != tbl->names->nfields - 1) ? delim : '\n';
+			putchar(c);
+		}
+	}
+}
+
+void
 usage(void)
 {
 	fprintf(stderr, "usage: updatecsv [-d delim] [-1 COL1] [-2 COL2] FILE1 < FILE2\n");
@@ -284,5 +369,3 @@ usage(void)
 	fprintf(stderr, " -1  number of column with ID in FILE1. Default is 1\n");
 	fprintf(stderr, " -2  number of column with ID in FILE2. Default is 1\n");
 }
-
-
