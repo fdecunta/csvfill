@@ -16,4 +16,7 @@ run: $(PROG)
 mem: $(PROG)
 	valgrind --leak-check=full ./updatecsv tests/example_dataframe.csv < tests/example_input.csv
 
-.PHONY: run clean
+test: $(PROG) run_test.sh
+	./run_test.sh
+
+.PHONY: run clean test

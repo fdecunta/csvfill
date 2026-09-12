@@ -18,6 +18,7 @@ struct table {
 	size_t 		  nrecords;
 };
 
+
 int	 	 readcsv(FILE *, struct table *);
 void	 	 usage(void);
 void	 	 free_table(struct table *);
@@ -30,6 +31,7 @@ void 		 find_changes(struct table *, struct table *);
 int 		 column_index(struct table *, char *);
 void 		 write_table(struct table *);
 int		 assert_columns_exist(struct table *, struct table *);
+int 		 assert_fields_number(struct table *);
 
 char delim;
 
@@ -95,8 +97,8 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
-	// TODO: check all rows have the same number of fields
 	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
+		assert_fields_number(&tbl1) || assert_fields_number(&tbl2) ||
 		assert_no_new_ids(&tbl1, &tbl2) != 0) {
 		free_table(&tbl1);
 		free_table(&tbl2);
@@ -408,6 +410,20 @@ assert_columns_exist(struct table *tbl1, struct table *tbl2)
 		}
 	}
 	return ret;
+}
+
+int
+assert_fields_number(struct table *tbl)
+{
+	int err = 0;
+	for (size_t i = 0; i < tbl->nrecords; i++) {
+		if (tbl->records[i]->nfields != tbl->names->nfields) {
+			fprintf(stderr, "%s: id: %s -- record with different number of rows\n", 
+				tbl->filename, tbl->records[i]->fields[tbl->idfield]);
+			err += 1;
+		}
+	}
+	return err;
 }
 
 void
