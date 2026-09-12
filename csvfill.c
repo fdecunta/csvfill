@@ -42,6 +42,7 @@ struct table tbl2 = { NULL, 0, NULL, NULL, 0 };
 int
 main(int argc, char *argv[])
 {
+	int ret;
 	FILE *fp1, *fp2;
 	delim = ',';
 
@@ -99,39 +100,39 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
-	if (tbl1.idfield >= tbl1.names->nfields)
-	    errx(EXIT_FAILURE, "%s: no such column: %ld", tbl1.filename, tbl1.idfield + 1);
-	if (tbl2.idfield >= tbl2.names->nfields)
-	    errx(EXIT_FAILURE, "%s: no such column: %ld", tbl2.filename, tbl2.idfield + 1);
+	/* 
+	 * set return to failure and only change when 
+	 * all tests passed
+	 */
+	ret = EXIT_FAILURE;
+
+	if (tbl1.idfield >= tbl1.names->nfields) {
+		warnx("%s: no such column: %ld", tbl1.filename, tbl1.idfield + 1);
+	        goto fail;
+	}
+	if (tbl2.idfield >= tbl2.names->nfields) {
+		warnx("%s: no such column: %ld", tbl2.filename, tbl2.idfield + 2);
+		goto fail;
+	}
 
 	// TODO: assert columsn are unique
-
-	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
-		assert_fields_number(&tbl1) || assert_fields_number(&tbl2) ||
-		assert_no_new_ids(&tbl1, &tbl2) != 0) {
-		free_table(&tbl1);
-		free_table(&tbl2);
-		exit(EXIT_FAILURE);
-	}
-
 	// TODO: add flag if want to add a new column. error if not
-	if (assert_columns_exist(&tbl1, &tbl2) != 0) {
-		free_table(&tbl1);
-		free_table(&tbl2);
-		exit(EXIT_FAILURE);
-	}
-
-	// create changes_stack
-	// apply changes from stack if not empty
+	if (assert_fields_number(&tbl1) != 0 || 
+		assert_fields_number(&tbl2) != 0 ||
+		assert_uniq_ids(&tbl1) != 0 ||
+		assert_uniq_ids(&tbl2) != 0 ||
+		assert_no_new_ids(&tbl1, &tbl2) != 0 ||
+		assert_columns_exist(&tbl1, &tbl2) != 0)
+		goto fail;
 
 	find_changes(&tbl1, &tbl2);
-
 	write_table(&tbl1, stdout);
+	ret = EXIT_SUCCESS;
 
+fail:
 	free_table(&tbl1);
 	free_table(&tbl2);
-
-	exit(EXIT_SUCCESS);
+	return ret;
 }
 
 long
@@ -140,9 +141,13 @@ readnum(char *s)
 	long num;
 	char *end;
 
+	errno = 0;
 	if ((num = strtol(s, &end, 10)) < 1 || *end) {
 		errx(EXIT_FAILURE, "illegal column ID indicator: %s", s);
 	}
+
+	if (errno == ERANGE) 
+		err(EXIT_FAILURE, "illegal  value %s", s);
 
 	return --num;
 }
@@ -157,14 +162,13 @@ readcsv(FILE *fp, struct table *tbl)
 	ssize_t linelen;
 	
 	char *sp, *ep, *qp; 	/* start pointer, end pointer and quote pointer */
-	char *rp; 		/* carriage return pointer */
 	(void)qp;
 
 	while ((linelen = getline(&line, &linesz, fp)) != -1) {
 		if (line[linelen - 1] == '\n')
 			line[linelen - 1] = '\0';
-		if ((rp = strrchr(line, '\r')) != NULL) 
-			*rp = '\0';
+		if (line[linelen - 1] == '\r')
+			line[linelen - 1] = '\0';
 
 		/* ignore lines without delimiter */
 		// TODO: add option to err if empty lines
@@ -230,11 +234,17 @@ readcsv(FILE *fp, struct table *tbl)
 void
 free_table(struct table *tbl)
 {
-	free_record(tbl->names);
+	free(tbl->filename);
+
+	if (tbl->names)
+		free_record(tbl->names);
+
+	if (!tbl->records)
+		return;
+
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		free_record(tbl->records[i]);
 	}
-	free(tbl->filename);
 	free(tbl->records);
 }
 
