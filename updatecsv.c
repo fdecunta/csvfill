@@ -130,14 +130,10 @@ readnum(char *s)
 	long num;
 	char *end;
 
-	if ((num = strtol(s, &end, 10)) < 1) {
-		fprintf(stderr, "error: option is less than 1 --%s\n", s);
-		exit(EXIT_FAILURE);
+	if ((num = strtol(s, &end, 10)) < 1 || *end) {
+		errx(EXIT_FAILURE, "illegal column ID indicator: %s", s);
 	}
-	if (*end) {
-		fprintf(stderr, "error: illegal field number -- %s\n", s);
-		exit(EXIT_FAILURE);
-	}
+
 	return --num;
 }
 
