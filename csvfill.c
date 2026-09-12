@@ -111,7 +111,7 @@ main(int argc, char *argv[])
 	        goto fail;
 	}
 	if (tbl2.idfield >= tbl2.names->nfields) {
-		warnx("%s: no such column: %ld", tbl2.filename, tbl2.idfield + 2);
+		warnx("%s: no such column: %ld", tbl2.filename, tbl2.idfield + 1);
 		goto fail;
 	}
 
@@ -142,14 +142,12 @@ readnum(char *s)
 	char *end;
 
 	errno = 0;
-	if ((num = strtol(s, &end, 10)) < 1 || *end) {
+	num = strtol(s, &end, 10);
+	if (end == s || *end != '\0' || errno == ERANGE || num < 1) {
 		errx(EXIT_FAILURE, "illegal column ID indicator: %s", s);
 	}
 
-	if (errno == ERANGE) 
-		err(EXIT_FAILURE, "illegal  value %s", s);
-
-	return --num;
+	return num - 1;
 }
 
 int
@@ -165,10 +163,10 @@ readcsv(FILE *fp, struct table *tbl)
 	(void)qp;
 
 	while ((linelen = getline(&line, &linesz, fp)) != -1) {
-		if (line[linelen - 1] == '\n')
-			line[linelen - 1] = '\0';
-		if (line[linelen - 1] == '\r')
-			line[linelen - 1] = '\0';
+		if (linelen > 0 && line[linelen - 1] == '\n')
+			line[--linelen] = '\0';
+		if (linelen > 0 && line[linelen - 1] == '\r')
+			line[--linelen] = '\0';
 
 		/* ignore lines without delimiter */
 		// TODO: add option to err if empty lines
