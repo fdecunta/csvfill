@@ -1,3 +1,4 @@
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,7 @@ int 		 assert_uniq_ids(const struct table *);
 int 		 assert_no_new_ids(const struct table *, const struct table *);
 void 		 find_changes(struct table *, struct table *);
 int 		 column_index(struct table *, char *);
-void 		 write_table(struct table *);
+void 		 write_table(struct table *, FILE *);
 int		 assert_columns_exist(struct table *, struct table *);
 int 		 assert_fields_number(struct table *);
 
@@ -72,15 +73,13 @@ main(int argc, char *argv[])
 	} 
 
 	if ((fp1 = fopen(*argv, "r")) == NULL) {
-		perror("fopen");
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "can't open %s", *argv);
 	}
 	tbl1.filename = strdup(*argv);
 	
 	fp2 = argc == 1 ? stdin : (fopen(*(++argv), "r"));
 	if (fp2 == NULL) {
-		perror("fopen fp2");
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "can't open %s", *argv);
 	}
 	tbl2.filename = strdup(argc == 1 ? "stdin" : *argv);
 
@@ -117,7 +116,7 @@ main(int argc, char *argv[])
 
 	find_changes(&tbl1, &tbl2);
 
-	write_table(&tbl1);
+	write_table(&tbl1, stdout);
 
 	free_table(&tbl1);
 	free_table(&tbl2);
@@ -333,7 +332,8 @@ find_changes(struct table *tbl1, struct table *tbl2)
 			return;
 		}
 
-		/* iterate over columns from table 2 and get values
+		/* 
+		 * iterate over columns from table 2 and get values
 		 * from each field in record
 		 */
 		for (col2 = 0; col2 < tbl2->names->nfields; col2++) {
@@ -365,24 +365,21 @@ column_index(struct table *tbl, char *s)
 }
 
 void
-write_table(struct table *tbl)
+write_table(struct table *tbl, FILE *fp)
 {
 	struct record *r;
 	char c;
 
 	for (int i = 0; i < tbl->names->nfields; i++) {
-		printf("%s", tbl->names->fields[i]);
 		c = (i != tbl->names->nfields - 1) ? delim : '\n';
-		putchar(c);
+		fprintf(fp, "%s%c", tbl->names->fields[i], c);
 	}
 
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		r = tbl->records[i];
 		for (int j = 0; j < tbl->names->nfields; j++) {
-			printf("%s", r->fields[j]);
-
 			c = (j != tbl->names->nfields - 1) ? delim : '\n';
-			putchar(c);
+			fprintf(fp, "%s%c", r->fields[j], c);
 		}
 	}
 }

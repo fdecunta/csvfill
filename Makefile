@@ -12,6 +12,7 @@ clean:
 
 run: $(PROG)
 	@./$(PROG) -1 1 -2 1 tests/example_dataframe.csv < tests/example_input.csv
+#	@./$(PROG) -1 1 -2 1 tests/01_good_db.csv < tests/01_good_input.csv
 
 mem: $(PROG)
 	valgrind --leak-check=full ./updatecsv tests/example_dataframe.csv < tests/example_input.csv
