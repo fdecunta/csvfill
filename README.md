@@ -1,9 +1,9 @@
-# updatecsv
+# csvfill
 
 The program should work like this:
 
 ```sh
-updatecsv my_df.csv < new_data.csv
+csvfill my_df.csv < new_data.csv
 ```
 
 Similar to patch.
@@ -20,4 +20,4 @@ Options:
 ## Bugs
 
 - The program can't handle embedded new lines in fields. 
-# new_updatecsv
+# new_csvfill

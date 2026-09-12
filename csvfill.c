@@ -96,6 +96,13 @@ main(int argc, char *argv[])
 	fclose(fp1);
 	fclose(fp2);
 
+	if (tbl1.idfield >= tbl1.names->nfields)
+	    errx(EXIT_FAILURE, "%s: no such column: %ld", tbl1.filename, tbl1.idfield + 1);
+	if (tbl2.idfield >= tbl2.names->nfields)
+	    errx(EXIT_FAILURE, "%s: no such column: %ld", tbl2.filename, tbl2.idfield + 1);
+
+	// TODO: assert columsn are unique
+
 	if (assert_uniq_ids(&tbl1) != 0 ||  assert_uniq_ids(&tbl2) != 0 || 
 		assert_fields_number(&tbl1) || assert_fields_number(&tbl2) ||
 		assert_no_new_ids(&tbl1, &tbl2) != 0) {
@@ -153,8 +160,7 @@ readcsv(FILE *fp, struct table *tbl)
 	while ((linelen = getline(&line, &linesz, fp)) != -1) {
 		if (line[linelen - 1] == '\n')
 			line[linelen - 1] = '\0';
-
-		if ((rp = strchr(line, '\r')) != NULL) 
+		if ((rp = strrchr(line, '\r')) != NULL) 
 			*rp = '\0';
 
 		/* ignore lines without delimiter */
@@ -422,7 +428,7 @@ assert_fields_number(struct table *tbl)
 void
 usage(void)
 {
-	fprintf(stderr, "usage: updatecsv [-d delim] [-1 COL1] [-2 COL2] FILE1 < FILE2\n");
+	fprintf(stderr, "usage: csvfill [-d delim] [-1 COL1] [-2 COL2] FILE1 FILE2\n");
 	fprintf(stderr, "\nUpdate FILE1 with data from FILE2\n");
 	fprintf(stderr, " -d  change delimiter. comma by default\n");
 	fprintf(stderr, " -1  number of column with ID in FILE1. Default is 1\n");

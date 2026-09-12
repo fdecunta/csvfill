@@ -24,9 +24,9 @@ test() {
 
 	if [ ${return} -eq 0 ]; then
 		expected="${EXPECTED}/${num}_${short}_expected.csv"
-		./updatecsv "$file1" "$file2" | diff -q "${expected}" -
+		./csvfill "$file1" "$file2" | diff -q "${expected}" -
 	elif [ ${return} -eq 1 ]; then
-		./updatecsv "$file1" "$file2" 2>/dev/null
+		./csvfill "$file1" "$file2" 2>/dev/null
 	fi
 
 	if [ $? -ne ${return} ]; then
