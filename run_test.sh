@@ -10,24 +10,31 @@
 # what is tested. 
 # 
 
+TEST="tests"
 EXPECTED="tests/expected"
 
 test() {
 	num="$1"
 	short="$2"
 	description="$3"
+	return="$4"
 
-	file1="tests/${num}_${short}_db.csv"
-	file2="tests/${num}_${short}_input.csv"
-	expected="tests/expected/${num}_${short}_expected.csv"
+	file1="${TEST}/${num}_${short}_db.csv"
+	file2="${TEST}/${num}_${short}_input.csv"
 
-	./updatecsv "$file1" "$file2" | diff -q "${expected}" -
+	if [ ${return} -eq 0 ]; then
+		expected="${EXPECTED}/${num}_${short}_expected.csv"
+		./updatecsv "$file1" "$file2" | diff -q "${expected}" -
+	elif [ ${return} -eq 1 ]; then
+		./updatecsv "$file1" "$file2" 2>/dev/null
+	fi
 
-	if [ $? -ne 0 ]; then
+	if [ $? -ne ${return} ]; then
 		echo "FAIL ${description}"
 	else
 		echo "OK   ${description}"
 	fi
 }
 
-test "1" "good" "Correct and vanilla"
+test "01" "good"       "Correct and vanilla"         0
+test "02" "bad_column" "Throw error with bar column" 1
