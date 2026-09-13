@@ -38,3 +38,4 @@ test() {
 
 test "01" "good"       "Correct and vanilla"         0
 test "02" "bad_column" "Throw error with bar column" 1
+test "03" "quotes"     "Quoted fields"               0

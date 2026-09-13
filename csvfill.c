@@ -153,14 +153,12 @@ readnum(char *s)
 int
 readcsv(FILE *fp, struct table *tbl)
 {
-	// TODO: handle comma inside quotes?
 	int first_line = 1;
 	char *line = NULL;
 	size_t linesz = 0;
 	ssize_t linelen;
 	
-	char *sp, *ep, *qp; 	/* start pointer, end pointer and quote pointer */
-	(void)qp;
+	char *sp, *ep, *sqp, *eqp; /* start pointer, end pointer, start quote pointer, etc */
 
 	while ((linelen = getline(&line, &linesz, fp)) != -1) {
 		if (linelen > 0 && line[linelen - 1] == '\n')
@@ -168,7 +166,6 @@ readcsv(FILE *fp, struct table *tbl)
 		if (linelen > 0 && line[linelen - 1] == '\r')
 			line[--linelen] = '\0';
 
-		/* ignore lines without delimiter */
 		// TODO: add option to err if empty lines
 		if ((ep = strchr(line, delim)) == NULL)
 			continue;
@@ -186,10 +183,21 @@ readcsv(FILE *fp, struct table *tbl)
 			size_t len;
 			char *tmp;
 
+			sqp = eqp = NULL;
+			if ((sqp = strchr(sp, '"')) && sqp < ep) {
+				if ((eqp = strchr(sqp + 1, '"')) && eqp > ep) {
+					if ((ep = strchr(eqp, delim)) == NULL)
+						ep = strchr(eqp, '\0');
+				} else if (!eqp) {
+					warn("unbalanced quotes marks:\n%s", line);
+					return -1;
+				}
+			}
+
 			len = (size_t)(ep - sp);
 			tmp = (char *) calloc(len+1, sizeof(char));
 			if (tmp == NULL) {
-				fprintf(stderr, "error in calloc: cannot get space for tmp\n");
+				warn("error in calloc: cannot get space for tmp");
 				return -1;
 			}
 			(void)strncpy(tmp, sp, len);
