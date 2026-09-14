@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 			tbl2.idfield = readnum(optarg);
 			break;
 		case 'd':
-			if (strlen(optarg) > 1 || optarg[0] == '\0') {
+			if (strlen(optarg) > 1 || optarg[0] == '\0' || optarg[0] == '"') {
 				errx(EXIT_FAILURE, "illegal delimiter: %s", optarg);
 			} 
 			delim = optarg[0];
