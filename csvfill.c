@@ -125,13 +125,11 @@ main(int argc, char *argv[])
 	ret = EXIT_SUCCESS;
 
 fail:
-	if (fp1)
-		fclose(fp1);
-	if (fp2 && fp2 != stdin)
+	fclose(fp1);
+	if (fp2 != stdin)
 		fclose(fp2);
 	free_table(&tbl1);
 	free_table(&tbl2);
-
 	return ret;
 }
 
