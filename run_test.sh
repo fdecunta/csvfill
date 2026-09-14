@@ -16,17 +16,18 @@ EXPECTED="tests/expected"
 test() {
 	num="$1"
 	short="$2"
-	description="$3"
-	return="$4"
+	flags="$3"
+	description="$4"
+	return="$5"
 
 	file1="${TEST}/${num}_${short}_db.csv"
 	file2="${TEST}/${num}_${short}_input.csv"
 
 	if [ ${return} -eq 0 ]; then
 		expected="${EXPECTED}/${num}_${short}_expected.csv"
-		./csvfill "$file1" "$file2" | diff -q "${expected}" -
+		./csvfill $flags "$file1" "$file2" | diff -q "${expected}" -
 	elif [ ${return} -eq 1 ]; then
-		./csvfill "$file1" "$file2" 2>/dev/null
+		./csvfill $flags "$file1" "$file2" 2>/dev/null
 	fi
 
 	if [ $? -ne ${return} ]; then
@@ -36,6 +37,8 @@ test() {
 	fi
 }
 
-test "01" "good"       "Correct and vanilla"         0
-test "02" "bad_column" "Throw error with bar column" 1
-test "03" "quotes"     "Quoted fields"               0
+test "01" "good"       "" 	"Correct and vanilla"		0        
+test "02" "bad_column" "" 	"Throw error with bar column" 	1
+test "03" "quotes"     "" 	"Quoted fields" 		0
+test "04" "overwrite"  "" 	"Attemp to overwrite value" 	1
+test "05" "12opts"     "-1 2" 	"Use -1 flag for ID"	 	0

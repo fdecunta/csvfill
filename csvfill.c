@@ -70,41 +70,37 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 0) {
-		fprintf(stderr, "error: missing args\n");
+	if (argc < 1 || argc > 2) {
+		fprintf(stderr, "error: accepts only one or two files\n");
 		usage();
 		exit(EXIT_FAILURE);
 	} 
 
-	if ((fp1 = fopen(*argv, "r")) == NULL) {
-		err(EXIT_FAILURE, "can't open %s", *argv);
+	if ((fp1 = fopen(argv[0], "r")) == NULL) {
+		err(EXIT_FAILURE, "can't open %s", argv[0]);
 	}
-	tbl1.filename = strdup(*argv);
+	tbl1.filename = strdup(argv[0]);
+	if (tbl1.filename == NULL)
+		err(EXIT_FAILURE, NULL);
 	
-	fp2 = argc == 1 ? stdin : (fopen(*(++argv), "r"));
+	fp2 = argc == 1 ? stdin : (fopen(argv[1], "r"));
 	if (fp2 == NULL) {
-		err(EXIT_FAILURE, "can't open %s", *argv);
+		err(EXIT_FAILURE, "can't open %s", argv[1]);
 	}
-	tbl2.filename = strdup(argc == 1 ? "stdin" : *argv);
-
-	if (readcsv(fp1, &tbl1) < 1) {
-		fclose(fp1);
-		free_table(&tbl1);
-		exit(EXIT_FAILURE);
-	}
-	if (readcsv(fp2, &tbl2) < 1) {
-		fclose(fp2);
-		free_table(&tbl2);
-		exit(EXIT_FAILURE);
-	}
-	fclose(fp1);
-	fclose(fp2);
+	tbl2.filename = strdup(argc == 1 ? "stdin" : argv[1]);
+	if (tbl2.filename == NULL)
+		err(EXIT_FAILURE, NULL);
 
 	/* 
 	 * set return to failure and only change when 
-	 * all tests passed
+	 * all is ok.
 	 */
 	ret = EXIT_FAILURE;
+
+	if (readcsv(fp1, &tbl1) == -1 || readcsv(fp2, &tbl2) == -1)
+		goto fail;
+	fclose(fp1);
+	fclose(fp2);
 
 	if (tbl1.idfield >= tbl1.names->nfields) {
 		warnx("%s: no such column: %ld", tbl1.filename, tbl1.idfield + 1);
@@ -127,11 +123,17 @@ main(int argc, char *argv[])
 
 	find_changes(&tbl1, &tbl2);
 	write_table(&tbl1, stdout);
+
 	ret = EXIT_SUCCESS;
 
 fail:
+	if (fp1)
+		fclose(fp1);
+	if (fp2 && fp2 != stdin)
+		fclose(fp2);
 	free_table(&tbl1);
 	free_table(&tbl2);
+
 	return ret;
 }
 
@@ -253,7 +255,9 @@ free_table(struct table *tbl)
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		free_record(tbl->records[i]);
 	}
-	free(tbl->records);
+
+	if (tbl->records)
+		free(tbl->records);
 }
 
 void
@@ -311,16 +315,13 @@ assert_no_new_ids(const struct table *tbl1, const struct table *tbl2)
 	 */
 	int errors = 0;
 	size_t i;
-	long id;
-	struct record *r;
-
-	id = tbl1->idfield;
+	char *id;
 
 	for (i = 0; i < tbl2->nrecords; i++) {
-		r = tbl2->records[i];
-		if ((find_record(tbl1, r->fields[id])) == NULL) {
-			fprintf(stderr, "%s: id %s not found in %s\n", 
-				tbl2->filename, r->fields[id], tbl1->filename);
+		id = tbl2->records[i]->fields[tbl2->idfield];
+		if ((find_record(tbl1, id)) == NULL) {
+			warnx("error in %s: ID %s not found in %s\n", 
+				tbl2->filename, id, tbl1->filename);
 			errors += 1;
 		}
 	}
@@ -363,7 +364,6 @@ find_changes(struct table *tbl1, struct table *tbl2)
 			if (col2 == tbl2->idfield)
 				continue;
 
-			// TODO: check not -1. although this must be assert in main 
 			col1 = column_index(tbl1, tbl2->names->fields[col2]);
 			f1 = r1->fields[col1];
 
@@ -371,6 +371,12 @@ find_changes(struct table *tbl1, struct table *tbl2)
 			if (!strcmp(f1, "") || !strcmp(f1, "NA") || !strcmp(f1, "NaN")) {
 				free(r1->fields[col1]);
 				r1->fields[col1] = strdup(r2->fields[col2]);
+				if (r1->fields[col1] == NULL) {
+					err(EXIT_FAILURE, "strdup in findchanges");
+				}
+			} else {
+				errx(EXIT_FAILURE, "error: attempt to overwrite value.\nID: %s -- variable: %s",
+					tmp_id, tbl2->names->fields[col2]);
 			}
 		}
 	}
