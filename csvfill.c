@@ -71,7 +71,7 @@ main(int argc, char *argv[])
 	argv += optind;
 
 	if (argc < 1 || argc > 2) {
-		fprintf(stderr, "error: accepts only one or two files\n");
+		warnx("error: accepts only one or two files");
 		usage();
 		exit(EXIT_FAILURE);
 	} 
@@ -172,7 +172,7 @@ readcsv(FILE *fp, struct table *tbl)
 
 		struct record *rec = (struct record *) malloc(sizeof(struct record));
 		if (rec == NULL) {
-			fprintf(stderr, "error in malloc: cannot get space for record\n");
+			warnx("error in malloc: cannot get space for record");
 			return -1;
 		}
 		rec->fields = NULL;
@@ -239,11 +239,11 @@ readcsv(FILE *fp, struct table *tbl)
 
 	/* haven't read column names */
 	if (first_line) {
-		fprintf(stderr, "%s: missing column names\n", tbl->filename);
+		warnx("%s: missing column names", tbl->filename);
 		return -1;
 	} 
 	if (!tbl->nrecords) {
-		fprintf(stderr, "%s: no rows to read\n", tbl->filename);
+		warnx("%s: no rows to read", tbl->filename);
 		return -1;
 	}
 
@@ -265,8 +265,7 @@ free_table(struct table *tbl)
 		free_record(tbl->records[i]);
 	}
 
-	if (tbl->records)
-		free(tbl->records);
+	free(tbl->records);
 }
 
 void
@@ -307,7 +306,7 @@ assert_uniq_ids(const struct table *tbl)
 		tmp_id = tbl->records[i]->fields[id];
 		for (j = i + 1; j < tbl->nrecords; j++) {
 			if (!strcmp(tmp_id, tbl->records[j]->fields[id]) && i != j) {
-				fprintf(stderr, "%s: id %s is not unique\n", tbl->filename, tmp_id);
+				warnx("%s: id %s is not unique", tbl->filename, tmp_id);
 				errs += 1;
 			}
 		}
@@ -329,7 +328,7 @@ assert_no_new_ids(const struct table *tbl1, const struct table *tbl2)
 	for (i = 0; i < tbl2->nrecords; i++) {
 		id = tbl2->records[i]->fields[tbl2->idfield];
 		if ((find_record(tbl1, id)) == NULL) {
-			warnx("error in %s: ID %s not found in %s\n", 
+			warnx("error in %s: ID %s not found in %s", 
 				tbl2->filename, id, tbl1->filename);
 			errors += 1;
 		}
@@ -361,7 +360,7 @@ find_changes(struct table *tbl1, struct table *tbl2)
 
 		r1 = find_record(tbl1, tmp_id);
 		if (r1 == NULL) {
-			fprintf(stderr, "error: can't find id %s\n", tmp_id);
+			warnx("error: can't find id %s", tmp_id);
 			return;
 		}
 
@@ -441,7 +440,7 @@ assert_columns_exist(struct table *tbl1, struct table *tbl2)
 
 		if (!found) {
 			ret -= 1;
-			fprintf(stderr, "col not found: %s\n", fname2);
+			warnx("col not found: %s", fname2);
 		}
 	}
 	return ret;
@@ -455,10 +454,10 @@ assert_fields_number(struct table *tbl)
 		if (tbl->records[i]->nfields != tbl->names->nfields) {
 			/* avoid out of bound if _idfield_ is not present */
 			if (tbl->records[i]->nfields > tbl->idfield) {
-				fprintf(stderr, "%s: id: %s -- record with different number of rows\n", 
+				warnx("%s: id: %s -- record with different number of rows", 
 					tbl->filename, tbl->records[i]->fields[tbl->idfield]);
 			} else {
-				fprintf(stderr, "%s: record %zu: wrong number of fields\n",
+				warnx("%s: record %zu: wrong number of fields",
 					tbl->filename, i + 1);
 			}
 			err += 1;
