@@ -157,7 +157,7 @@ readcsv(FILE *fp, struct table *tbl)
 	char *line = NULL;
 	size_t linesz = 0;
 	ssize_t linelen;
-	
+
 	char *sp, *ep, *sqp, *eqp; /* start pointer, end pointer, start quote pointer, etc */
 
 	while ((linelen = getline(&line, &linesz, fp)) != -1) {
@@ -182,6 +182,7 @@ readcsv(FILE *fp, struct table *tbl)
 		for (;;) {
 			size_t len;
 			char *tmp;
+			char **tmpf;
 
 			sqp = eqp = NULL;
 			if ((sqp = strchr(sp, '"')) && sqp < ep) {
@@ -203,7 +204,12 @@ readcsv(FILE *fp, struct table *tbl)
 			(void)strncpy(tmp, sp, len);
 			tmp[len] = '\0';
 
-			rec->fields = realloc(rec->fields, (size_t)(rec->nfields + 1) * sizeof(char *));
+			tmpf = realloc(rec->fields, (size_t)(rec->nfields + 1) * sizeof(char *));
+			if (tmpf == NULL) {
+				warnx("cannot allocate space for field");
+				return -1;
+			}
+			rec->fields = tmpf;
 			rec->fields[rec->nfields++] = tmp;
 
 			sp = ep;
@@ -219,7 +225,14 @@ readcsv(FILE *fp, struct table *tbl)
 			first_line = 0;
 			continue;
 		} 
-		tbl->records = realloc(tbl->records, (size_t)(1 + tbl->nrecords) * sizeof(struct record *));
+
+		struct record **tmpr; 		/* temporal records pointer */
+		tmpr = realloc(tbl->records, (size_t)(1 + tbl->nrecords) * sizeof(struct record *));
+		if (tmpr == NULL) {
+			warnx("cannot allocate space for new records");
+			return -1;
+		}
+		tbl->records = tmpr;
 		tbl->records[tbl->nrecords++] = rec;
 	}
 	free(line);
