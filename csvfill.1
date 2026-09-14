@@ -1,0 +1,103 @@
+.TH CSVFILL 1
+.SH NAME
+csvfill \- fill missing values in a CSV table from another
+.SH SYNOPSIS
+.B csvfill
+.RB [ \-d
+.IR delim ]
+.RB [ \-1
+.IR col1 ]
+.RB [ \-2
+.IR col2 ]
+.I file1
+.RI [ file2 ]
+.SH DESCRIPTION
+.B csvfill
+reads two delimited tables,
+.I file1
+and
+.IR file2 ,
+each beginning with a header row.
+Rows are paired by an ID column (the first column by default; see
+.B \-1
+and
+.BR \-2 ).
+Columns are matched by name, not position.
+Fields of
+.I file1
+that are missing \(em that is, empty or exactly
+.B NA
+or
+.B NaN
+\(em are replaced with the value from the matching row of
+.IR file2 ;
+the ID column of
+.I file2
+is not itself copied.
+The result is written to standard output.
+If
+.I file2
+is omitted, it is read from standard input.
+.PP
+It is an error if
+.IP \(bu 2
+an ID appears more than once in either table;
+.IP \(bu
+an ID in
+.I file2
+has no matching row in
+.IR file1 ;
+.IP \(bu
+a column of
+.I file2
+does not exist in
+.IR file1 ;
+.IP \(bu
+a row has a different number of fields than its header, or contains
+unbalanced double quotes; or
+.IP \(bu
+a field that is not missing would be overwritten.
+.PP
+Fields may be enclosed in double quotes to protect an embedded delimiter.
+Lines containing no delimiter are ignored.
+.SH OPTIONS
+.TP
+.BI \-d " delim"
+Use
+.I delim
+as the field delimiter instead of a comma.
+It must be a single character other than the double quote.
+.TP
+.BI \-1 " col1"
+Number (counting from 1) of the ID column in
+.IR file1 .
+The default is 1.
+.TP
+.BI \-2 " col2"
+Number of the ID column in
+.IR file2 .
+The default is 1.
+.TP
+.B \-h
+Print a usage summary and exit.
+.SH EXIT STATUS
+Exits 0 on success, 1 on error.
+.SH EXAMPLES
+Fill missing entries of
+.I people.csv
+from
+.IR updates.csv :
+.PP
+.RS
+.nf
+ $ csvfill people.csv updates.csv > people.complete.csv
+.fi
+.RE
+.PP
+Semicolon-delimited, ID in column 2 of the master, second table on stdin:
+.PP
+.RS
+.nf
+ $ csvfill -d ';' -1 2 master.csv < patch.csv
+.fi
+.RE

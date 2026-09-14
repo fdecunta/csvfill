@@ -99,8 +99,6 @@ main(int argc, char *argv[])
 
 	if (readcsv(fp1, &tbl1) == -1 || readcsv(fp2, &tbl2) == -1)
 		goto fail;
-	fclose(fp1);
-	fclose(fp2);
 
 	if (tbl1.idfield >= tbl1.names->nfields) {
 		warnx("%s: no such column: %ld", tbl1.filename, tbl1.idfield + 1);
