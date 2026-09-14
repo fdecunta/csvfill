@@ -469,9 +469,16 @@ assert_fields_number(struct table *tbl)
 void
 usage(void)
 {
-	fprintf(stderr, "usage: csvfill [-d delim] [-1 COL1] [-2 COL2] FILE1 FILE2\n");
-	fprintf(stderr, "\nUpdate FILE1 with data from FILE2\n");
-	fprintf(stderr, " -d  change delimiter. comma by default\n");
-	fprintf(stderr, " -1  number of column with ID in FILE1. Default is 1\n");
-	fprintf(stderr, " -2  number of column with ID in FILE2. Default is 1\n");
+	fprintf(stderr,
+		"usage: csvfill [-1 col1] [-2 col2] [-d delim] file1 [file2]\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Fill empty cells (\"\", NA, NaN) in file1 with values from file2,\n");
+	fprintf(stderr, "matching rows by their ID column, and print the result.\n");
+	fprintf(stderr, "Existing values are never overwritten.\n");
+	fprintf(stderr, "If file2 is omitted, it is read from standard input.\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "  -1 col1    ID column in file1, 1-based (default: 1)\n");
+	fprintf(stderr, "  -2 col2    ID column in file2, 1-based (default: 1)\n");
+	fprintf(stderr, "  -d delim   field delimiter (default: ,)\n");
+	fprintf(stderr, "  -h         show this help\n");
 }
