@@ -135,6 +135,8 @@ fail:
 	return ret;
 }
 
+
+
 long
 readnum(char *s)
 {
@@ -189,7 +191,7 @@ readcsv(FILE *fp, struct table *tbl)
 					if ((ep = strchr(eqp, delim)) == NULL)
 						ep = strchr(eqp, '\0');
 				} else if (!eqp) {
-					warn("unbalanced quotes marks:\n%s", line);
+					warnx("unbalanced quotes marks:\n%s", line);
 					return -1;
 				}
 			}
