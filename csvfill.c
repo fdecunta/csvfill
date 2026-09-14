@@ -197,7 +197,7 @@ readcsv(FILE *fp, struct table *tbl)
 			len = (size_t)(ep - sp);
 			tmp = (char *) calloc(len+1, sizeof(char));
 			if (tmp == NULL) {
-				warn("error in calloc: cannot get space for tmp");
+				warnx("error in calloc: cannot get space for tmp");
 				return -1;
 			}
 			(void)strncpy(tmp, sp, len);
@@ -436,8 +436,14 @@ assert_fields_number(struct table *tbl)
 	int err = 0;
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		if (tbl->records[i]->nfields != tbl->names->nfields) {
-			fprintf(stderr, "%s: id: %s -- record with different number of rows\n", 
-				tbl->filename, tbl->records[i]->fields[tbl->idfield]);
+			/* avoid out of bound if _idfield_ is not present */
+			if (tbl->records[i]->nfields > tbl->idfield) {
+				fprintf(stderr, "%s: id: %s -- record with different number of rows\n", 
+					tbl->filename, tbl->records[i]->fields[tbl->idfield]);
+			} else {
+				fprintf(stderr, "%s: record %zu: wrong number of fields\n",
+					tbl->filename, i + 1);
+			}
 			err += 1;
 		}
 	}
