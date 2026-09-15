@@ -19,20 +19,19 @@ struct table {
 	size_t 		  nrecords;
 };
 
-
-int	 	 readcsv(FILE *, struct table *);
-void	 	 usage(void);
-void	 	 free_table(struct table *);
-void	 	 free_record(struct record *);
-long		 readnum(char *);
-struct record 	*find_record(const struct table *,  char *);
-int 		 assert_uniq_ids(const struct table *);
-int 		 assert_no_new_ids(const struct table *, const struct table *);
-void 		 find_changes(struct table *, struct table *);
-int 		 column_index(struct table *, char *);
-void 		 write_table(struct table *, FILE *);
 int		 assert_columns_exist(struct table *, struct table *);
 int 		 assert_fields_number(struct table *);
+int 		 assert_no_new_ids(const struct table *, const struct table *);
+int 		 assert_uniq_ids(const struct table *);
+int 		 column_index(struct table *, char *);
+int	 	 readcsv(FILE *, struct table *);
+long		 readnum(char *);
+struct record 	*find_record(const struct table *,  char *);
+void 		 find_changes(struct table *, struct table *);
+void	 	 free_record(struct record *);
+void	 	 free_table(struct table *);
+void	 	 usage(void);
+void 		 write_table(struct table *, FILE *);
 
 char delim;
 
@@ -109,7 +108,7 @@ main(int argc, char *argv[])
 		goto fail;
 	}
 
-	// TODO: assert columsn are unique
+	// TODO: assert columsn are unique: maybe use hashtable
 	// TODO: add flag if want to add a new column. error if not
 	if (assert_fields_number(&tbl1) != 0 || 
 		assert_fields_number(&tbl2) != 0 ||
@@ -123,7 +122,6 @@ main(int argc, char *argv[])
 	write_table(&tbl1, stdout);
 
 	ret = EXIT_SUCCESS;
-
 fail:
 	fclose(fp1);
 	if (fp2 != stdin)
@@ -296,6 +294,9 @@ find_record(const struct table *tbl,  char *s)
 int
 assert_uniq_ids(const struct table *tbl)
 {
+	/*
+	 * all ids in a table must be unique 
+	 */
 	int errs = 0;
 	size_t i, j;
 	long id;
@@ -449,6 +450,10 @@ assert_columns_exist(struct table *tbl1, struct table *tbl2)
 int
 assert_fields_number(struct table *tbl)
 {
+	/*
+	 * assert that all records have the same
+	 * number of fields.
+	 */
 	int err = 0;
 	for (size_t i = 0; i < tbl->nrecords; i++) {
 		if (tbl->records[i]->nfields != tbl->names->nfields) {
