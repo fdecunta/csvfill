@@ -27,7 +27,7 @@ int 		 column_index(struct table *, char *);
 int	 	 readcsv(FILE *, struct table *);
 long		 readnum(char *);
 struct record 	*find_record(const struct table *,  char *);
-void 		 find_changes(struct table *, struct table *);
+int 		 find_changes(struct table *, struct table *);
 void	 	 free_record(struct record *);
 void	 	 free_table(struct table *);
 void	 	 usage(void);
@@ -118,7 +118,9 @@ main(int argc, char *argv[])
 		assert_columns_exist(&tbl1, &tbl2) != 0)
 		goto fail;
 
-	find_changes(&tbl1, &tbl2);
+	if (find_changes(&tbl1, &tbl2) == -1)
+		goto fail;
+
 	write_table(&tbl1, stdout);
 
 	ret = EXIT_SUCCESS;
@@ -337,7 +339,7 @@ assert_no_new_ids(const struct table *tbl1, const struct table *tbl2)
 	return errors;
 }
 
-void
+int
 find_changes(struct table *tbl1, struct table *tbl2)
 {
 	/*
@@ -362,7 +364,7 @@ find_changes(struct table *tbl1, struct table *tbl2)
 		r1 = find_record(tbl1, tmp_id);
 		if (r1 == NULL) {
 			warnx("error: can't find id %s", tmp_id);
-			return;
+			return -1;
 		}
 
 		/* 
@@ -381,7 +383,7 @@ find_changes(struct table *tbl1, struct table *tbl2)
 				free(r1->fields[col1]);
 				r1->fields[col1] = strdup(r2->fields[col2]);
 				if (r1->fields[col1] == NULL) {
-					err(EXIT_FAILURE, "strdup in findchanges");
+					err(EXIT_FAILURE, "strdup in find_changes");
 				}
 			} else {
 				errx(EXIT_FAILURE, "error: attempt to overwrite value.\nID: %s -- variable: %s",
@@ -389,6 +391,7 @@ find_changes(struct table *tbl1, struct table *tbl2)
 			}
 		}
 	}
+	return 0;
 }
 
 int
