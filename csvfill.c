@@ -378,7 +378,6 @@ find_changes(struct table *tbl1, struct table *tbl2)
 			col1 = column_index(tbl1, tbl2->names->fields[col2]);
 			f1 = r1->fields[col1];
 
-			// TODO: handle error if not empty
 			if (!strcmp(f1, "") || !strcmp(f1, "NA") || !strcmp(f1, "NaN")) {
 				free(r1->fields[col1]);
 				r1->fields[col1] = strdup(r2->fields[col2]);

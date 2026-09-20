@@ -1,9 +1,5 @@
 # csvfill
 
-Fill empty cells in a CSV file with values from another CSV file, matching rows by an ID column. Existing values are never overwritten. Only empty cells ("", NA, NaN) are replaced.
-
-## Usage
-
 ```sh
 usage: csvfill [-1 col1] [-2 col2] [-d delim] file1 [file2]
 
@@ -16,6 +12,17 @@ If file2 is omitted, it is read from standard input.
   -2 col2    ID column in file2, 1-based (default: 1)
   -d delim   field delimiter (default: ,)
   -h         show this help
+```
+
+Details can be found in the `man` page.
+
+## Install and uninstall
+
+Needs sudo/doas:
+
+```sh
+make install
+make remove
 ```
 
 ## Bugs

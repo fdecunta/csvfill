@@ -1,22 +1,29 @@
 PROG = csvfill
 SRC  = csvfill.c
+MAN  = csvfill.1
 
 CC     = cc
-CFLAGS = -Wall -Wextra -Werror -Wconversion -g 
+CFLAGS = -Wall -Wextra -Werror -Wconversion
+
+BINDIR = /usr/local/bin
+MANDIR = /usr/local/man/man1
 
 $(PROG): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(PROG)
 
+install: $(PROG)
+	cp $(PROG) $(BINDIR)/$(PROG)
+	mkdir -p $(MANDIR)
+	cp $(MAN) $(MANDIR)/$(MAN)
+
+remove: $(PROG)
+	rm -f $(BINDIR)/$(PROG)
+	rm -f $(MANDIR)/$(MAN)
+
 clean:
 	rm -f $(PROG)
-
-run: $(PROG)
-	@./$(PROG) -1 1 -2 1 tests/01_good_db.csv < tests/01_good_input.csv
-
-mem: $(PROG)
-	valgrind --leak-check=full ./csvfill tests/01_good_db.csv < tests/01_good_input.csv
 
 test: $(PROG) run_test.sh
 	./run_test.sh
 
-.PHONY: run clean test
+.PHONY: install remove clean test
